@@ -38,6 +38,7 @@ Demo::Demo(Motor *motor, ISensor *sensor, Plotter *plot, WheelSignal *wheel):
     _h = 100.0f;//電圧固定100%
     
     _sct = 0;
+    _sct_chg = 0;
 }
 /**
   * @brief setting load
@@ -97,18 +98,23 @@ void Demo::get_w(){
     // 0->2->1->4->3     OK
     // 0->3->2->1->4->3  OK
     // 0->4->3->2->1     OK
+    //              *               *
+    //      0      256     512     768     1024
+    //      +-------+-------+-------+-------+
+    //      | SEC_1 |     SEC_2     | SEC_1 |       
+    //
+    
     enum Section {//区画の定義
         NONE=0, SEC_1, SEC_2, SEC_3, SEC_4,
     };
     static int i = 9; //index: default=100%
     static int cnt = 0;
+    static bool plus = false;
 
     //現在区画の確認
     uint16_t x = _raw2;
-    if(0 <= x && x < 256) _now_sct = SEC_1;
-    if(256 <= x && x < 512) _now_sct = SEC_2;
-    if(512 <= x && x < 768) _now_sct = SEC_3;
-    if(768 <= x && x < 1024) _now_sct = SEC_4;
+    if((0 <= x && x < 256) || (768 <= x && x < 1024)) _now_sct = SEC_1;
+    if(256 <= x && x < 768) _now_sct = SEC_2;
 
     switch(_sct){
     case 0:
@@ -116,23 +122,34 @@ void Demo::get_w(){
         break;
     case SEC_1:
         if(_now_sct == SEC_2) {
-            if(++cnt >= 2){//2ポイントまたがった(正転)
-                if(++i >= 10) i = 9; //周期変更
-                cnt = 0;
+            _sct_chg++;
+            if(plus){
+L_001:
+                if(++cnt >= 2){//2ポイントまたがった(正転)
+                    if(++i >= 10) i = 9; //周期変更
+                    if(i==9)plus=!plus;
+                    cnt = 0;
+                }
+            }else{
+L_002:
+                if(--cnt <= -2){//２ポイントまたがった（逆転）
+                    if(--i < 0) i = 0; //周期変更
+                    if(i==0)plus=!plus;
+                    cnt = 0;
+                }
             }
         }
         _sct = _now_sct;
         break;
     case SEC_2:
         if(_now_sct == SEC_1){
-            if(--cnt <= -2){//２ポイントまたがった（逆転）
-                if(--i < 0) i = 0; //周期変更
-                cnt = 0;
-            }
+            _sct_chg++;
+            if(plus) goto L_001;
+            else     goto L_002;   
         }
         _sct = _now_sct;
         break;
-    case SEC_3:
+    /*case SEC_3:
         if(_now_sct == SEC_4){
             //正転またがり処理
             if(++cnt >= 2){//2ポイントまたがった(正転)
@@ -151,7 +168,7 @@ void Demo::get_w(){
             }
         }
         _sct = _now_sct;
-        break;
+        break;*/
     }
     
     _w = g_width[i]; //周期決定
@@ -194,14 +211,13 @@ void Demo::setting_out(){
 bool Demo::ChangeCheck(bool change){
     char buf1[8], buf2[8], buf3[8], buf4[8], buf5[8];
     static bool flg = false;
-    
-//    if(g_rrlsCnt && flg){
-//        g_green = 1;
-//        setting_out();
-//        INTERRUPT_CLEAR();
-//        g_green = 0;
-//        return true;
-//    }
+
+    static int mode = 0;
+    if(mode == 1 && g_rrlsCnt){//周期設定モードかつ右リリース
+        mode = 0;
+        INTERRUPT_CLEAR();
+        return false;
+    }
 
     if(g_lclkCnt){//ワンショット
         if(g_rclkCnt){//ワンショット
@@ -219,7 +235,9 @@ bool Demo::ChangeCheck(bool change){
             INTERRUPT_CLEAR();
         }
     } else {
-        if(g_rclkCnt){//連続ショット
+        if(g_rclkCnt >= 10) mode = 1;//連続ショット
+        
+        if(mode == 1 && g_rclkCnt){//周期設定モード
             //右クリック押しながらホイール回転で周期を変える
             g_green = 1;
             change = true;
@@ -236,7 +254,7 @@ bool Demo::ChangeCheck(bool change){
         sprintf(buf2, "W%d", (int)_w);
         sprintf(buf3, "H%d", (int)_h);
         sprintf(buf4, "s%d", (int)_sct);
-        sprintf(buf5, "n%d", (int)_now_sct);
+        sprintf(buf5, "n%d", (int)_sct_chg);
         _plot->label(buf1, buf2, buf3, buf4, buf5);
         
         //設定データのプロット（グラフ） ぐるぐる回している最中はやらない
