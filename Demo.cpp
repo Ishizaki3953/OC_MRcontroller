@@ -104,8 +104,8 @@ void Demo::get_w(){
 
     //現在区画の確認
     //uint16_t x = _raw % 1024;
-    //uint16_t x = _raw2;
-    uint16_t x = ad_conv(_raw, 50);
+    uint16_t x = _raw2;
+    //uint16_t x = ad_conv(_raw, 50);
     if(0 <= x && x < 256) now_sct = SEC_1;
     if(256 <= x && x < 512) now_sct = SEC_2;
     if(512 <= x && x < 768) now_sct = SEC_3;
