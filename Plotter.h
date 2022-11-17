@@ -19,7 +19,7 @@ private:
 
 public:
     Plotter(Serial *pc);
-    void label(char *t1, char *t2=NULL, char *t3=NULL, char *t4=NULL);
+    void label(char *t1, char *t2=NULL, char *t3=NULL, char *t4=NULL, char *t5=NULL);
     void plot(int *data, int n);
     void plot(float *data, int n);
     void plot(float data);

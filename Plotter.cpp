@@ -22,11 +22,12 @@ Plotter::Plotter(Serial *pc){
   * @param  text
   * @retval none
   */
-void Plotter::label(char *t1, char *t2, char *t3, char *t4){
-    if(t2==NULL && t3==NULL && t4==NULL) _pc->printf("OMRON,%s\n", t1);
-    else if(t3==NULL && t4==NULL) _pc->printf("OMRON,%s,%s\n", t1, t2);
-    else if(t4==NULL) _pc->printf("OMRON,%s,%s,%s\n", t1, t2, t3);
-    else _pc->printf("OMRON,%s,%s,%s,%s\n", t1, t2, t3, t4);
+void Plotter::label(char *t1, char *t2, char *t3, char *t4, char *t5){
+    if(t2==NULL && t3==NULL && t4==NULL && t5==NULL) _pc->printf("%s\n", t1);
+    else if(t3==NULL && t4==NULL && t5==NULL) _pc->printf("%s,%s\n", t1, t2);
+    else if(t4==NULL && t5==NULL) _pc->printf("%s,%s,%s\n", t1, t2, t3);
+    else if(t5==NULL) _pc->printf("%s,%s,%s,%s\n", t1, t2, t3, t4);
+    else _pc->printf("%s,%s,%s,%s,%s\n", t1, t2, t3, t4, t5);
 }
 /**
   * @brief plot

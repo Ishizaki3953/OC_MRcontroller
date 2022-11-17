@@ -53,7 +53,6 @@ static void lclk_interrupt(){
 static void lrls_interrupt(){
     g_lrlsCnt++;
     //pc.printf("l"); 
-    if(g_lclick.read() == 0) g_bothCnt++;
 }
 /**
   * @brief right click/release interrupt
@@ -63,6 +62,7 @@ static void lrls_interrupt(){
 static void rclk_interrupt(){
     g_rclkCnt++;
     //pc.printf("R"); 
+    if(g_lclick.read() == 0) g_bothCnt++;
 }
 static void rrls_interrupt(){
     g_rrlsCnt++;
