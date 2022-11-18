@@ -17,7 +17,6 @@
         g_rclkCnt = 0;\
         g_lrlsCnt = 0;\
         g_rrlsCnt = 0;\
-        g_bothCnt = 0;\
         __enable_irq();
 
 /**
@@ -72,9 +71,9 @@ void Demo::setting_load(){
 /**
   * @brief get width (周期)
   * @param  none
-  * @retval none
+  * @retval width
   */
-void Demo::get_w(){
+float Demo::get_w(){
     // ad
     //       ad   w          y
     //[  8%] 100/(  8/100)=> ad=1250%1024=[226]
@@ -113,13 +112,22 @@ void Demo::get_w(){
 
     //現在区画の確認
     uint16_t x = _raw2;
+//#define CHECK
+#ifdef CHECK
     if((0 <= x && x < 256) || (768 <= x && x < 1024)) _now_sct = SEC_1;
     if(256 <= x && x < 768) _now_sct = SEC_2;
+#else
+    if(0 <= x && x < 256) _now_sct = SEC_1;
+    else if(256 <= x && x < 512) _now_sct = SEC_2;
+    else if(512 <= x && x < 768) _now_sct = SEC_3;
+    else if(768 <= x && x < 1024) _now_sct = SEC_4;
+#endif
 
     switch(_sct){
     case 0:
         _sct = _now_sct; //現在区画を覚えて次を待つ
         break;
+#ifdef CHECK
     case SEC_1:
         if(_now_sct == SEC_2) {
             _sct_chg++;
@@ -149,29 +157,55 @@ L_002:
         }
         _sct = _now_sct;
         break;
-    /*case SEC_3:
-        if(_now_sct == SEC_4){
+#else
+    case SEC_1:
+        if(_now_sct == SEC_2){
             //正転またがり処理
-            if(++cnt >= 2){//2ポイントまたがった(正転)
+            if(++cnt >= 1){//2ポイントまたがった(正転)
                 if(++i >= 10) i = 9; //周期変更
                 cnt = 0;
             }
         }
+        if(_sct != _now_sct) _sct_chg++;
+        _sct = _now_sct;
+        break;
+    case SEC_2:
+        if(_now_sct == SEC_1){
+            //逆転またがり処理
+            if(--cnt <= -1){//２ポイントまたがった（逆転）
+                if(--i < 0) i = 0; //周期変更
+                cnt = 0;
+            }
+        }
+        if(_sct != _now_sct) _sct_chg++;
+        _sct = _now_sct;
+        break;
+    case SEC_3:
+        if(_now_sct == SEC_4){
+            //正転またがり処理
+            if(++cnt >= 1){//2ポイントまたがった(正転)
+                if(++i >= 10) i = 9; //周期変更
+                cnt = 0;
+            }
+        }
+        if(_sct != _now_sct) _sct_chg++;
         _sct = _now_sct;
         break;
     case SEC_4:
         if(_now_sct == SEC_3){
             //逆転またがり処理
-            if(--cnt <= -2){//２ポイントまたがった（逆転）
+            if(--cnt <= -1){//２ポイントまたがった（逆転）
                 if(--i < 0) i = 0; //周期変更
                 cnt = 0;
             }
         }
+        if(_sct != _now_sct) _sct_chg++;
         _sct = _now_sct;
-        break;*/
+        break;
+#endif
     }
     
-    _w = g_width[i]; //周期決定
+    return g_width[i]; //周期決定
 }
 /**
   * @brief ad convert
@@ -221,7 +255,9 @@ bool Demo::ChangeCheck(bool change){
 
     if(g_lclkCnt){//ワンショット
         if(g_rclkCnt){//ワンショット
-            if(g_bothCnt){//同時押し
+            //if(g_bothCnt){//同時押し
+            if(g_lclick.read() == 0 && g_rclick.read() == 0){
+
                 //左と右クリック同時押しでパターン切り替え
                 g_green = 1;
                 change = true;
@@ -235,7 +271,7 @@ bool Demo::ChangeCheck(bool change){
             INTERRUPT_CLEAR();
         }
     } else {
-        if(g_rclkCnt >= 10) mode = 1;//連続ショット
+        if(g_rclkCnt >= RLONG_TIME) mode = 1;//連続ショット
         
         if(mode == 1 && g_rclkCnt){//周期設定モード
             //右クリック押しながらホイール回転で周期を変える
@@ -246,7 +282,10 @@ bool Demo::ChangeCheck(bool change){
         }
     }
     
-    get_w();//ホイール回転による周期更新。常時実行
+    float w = get_w();//ホイール回転による周期更新。常時実行
+    if(mode == 1){
+        _w = w;
+    }
     
     if(change){
         //ラベルプロット

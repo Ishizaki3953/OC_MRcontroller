@@ -31,10 +31,9 @@ static Terminal g_term(&pc);
 /* BUTTON --------------------------------------------------------------------*/
 #include "InterruptInEx.h"
 
-static InterruptInEx g_lclick(PA_4, false);//左クリック(ワンショット)
-static InterruptInEx g_rclick(PA_3, true);//右クリック(リピートボタン)
+InterruptInEx g_lclick(PA_4, false);//左クリック(ワンショット)
+InterruptInEx g_rclick(PA_3, true);//右クリック(リピートボタン)
 
-int g_bothCnt = 0;//同時押し検出
 int g_lclkCnt = 0;//左クリックカウント
 int g_rclkCnt = 0;//右クリックカウント
 int g_lrlsCnt = 0;//左リリースカウント
@@ -48,7 +47,6 @@ int g_rrlsCnt = 0;//右リリースカウント
 static void lclk_interrupt(){
     g_lclkCnt++; 
     //pc.printf("L");
-    if(g_rclick.read() == 0) g_bothCnt++;
 }
 static void lrls_interrupt(){
     g_lrlsCnt++;
@@ -62,7 +60,6 @@ static void lrls_interrupt(){
 static void rclk_interrupt(){
     g_rclkCnt++;
     //pc.printf("R"); 
-    if(g_lclick.read() == 0) g_bothCnt++;
 }
 static void rrls_interrupt(){
     g_rrlsCnt++;
@@ -123,7 +120,6 @@ static void loop(){
                 g_rclkCnt = 0;
                 g_lrlsCnt = 0;
                 g_rrlsCnt = 0;
-                g_bothCnt = 0;
 
                 g_demo.start();
                 step++;//goto demo

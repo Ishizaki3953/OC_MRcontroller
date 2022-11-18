@@ -61,7 +61,7 @@ private:
 
     float ZeroTorqueCheck();
     void setting_load();
-    void get_w();
+    float get_w();
     uint16_t ad_conv(uint16_t ad, float w);
     void tick_interrupt(void);
     void setting_out();

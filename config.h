@@ -11,6 +11,7 @@
 #define CONFIG_h
 
 #define ZERO_TORQUE  500 //zero torque [ms]
+#define RLONG_TIME  5 //右クリック長押し判定時間 [100ms]
 
 //period percent
 static float g_width[] = {

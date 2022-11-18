@@ -12,6 +12,7 @@
 
 #include "mbed.h"
 #include "SerialEx.h"
+#include "InterruptInEx.h"
 
 typedef void (*CALLBACK)(void);
 
@@ -19,7 +20,9 @@ typedef void (*CALLBACK)(void);
 
 extern SerialEx pc;
 extern DigitalOut g_green;
-extern int g_bothCnt;
+extern InterruptInEx g_lclick;
+extern InterruptInEx g_rclick;
+
 extern int g_lclkCnt;
 extern int g_rclkCnt;
 extern int g_lrlsCnt;
