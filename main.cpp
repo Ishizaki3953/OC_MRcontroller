@@ -15,7 +15,7 @@ SerialEx pc(USBTX, USBRX, 115200);
 DigitalOut g_green(LED1);
 
 /* MOTOR ---------------------------------------------------------------------*/
-#include "MotorEx.h"
+#include "Motor.h"
 static PwmOut pwm(PA_8);
 static DigitalOut dir(PA_7);
 static Motor g_motor(&pwm, &dir);

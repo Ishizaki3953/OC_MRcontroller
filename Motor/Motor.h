@@ -20,6 +20,7 @@ protected:
     DigitalOut *_dir;
     PwmOut *_pwm;
 public:
+    int ZERO;
     Motor(PwmOut *pwm, DigitalOut *dir);
     virtual void pwmout(float pwm);
 };

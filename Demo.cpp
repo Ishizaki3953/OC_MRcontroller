@@ -97,112 +97,83 @@ float Demo::get_w(){
     // 0->2->1->4->3     OK
     // 0->3->2->1->4->3  OK
     // 0->4->3->2->1     OK
-    //              *               *
-    //      0      256     512     768     1024
-    //      +-------+-------+-------+-------+
-    //      | SEC_1 |     SEC_2     | SEC_1 |       
     //
-    
     enum Section {//区画の定義
         NONE=0, SEC_1, SEC_2, SEC_3, SEC_4,
     };
     static int i = 9; //index: default=100%
     static int cnt = 0;
-    static bool plus = false;
+    static bool plus = true;
 
     //現在区画の確認
     uint16_t x = _raw2;
-//#define CHECK
-#ifdef CHECK
-    if((0 <= x && x < 256) || (768 <= x && x < 1024)) _now_sct = SEC_1;
-    if(256 <= x && x < 768) _now_sct = SEC_2;
-#else
     if(0 <= x && x < 256) _now_sct = SEC_1;
     else if(256 <= x && x < 512) _now_sct = SEC_2;
     else if(512 <= x && x < 768) _now_sct = SEC_3;
     else if(768 <= x && x < 1024) _now_sct = SEC_4;
-#endif
 
     switch(_sct){
     case 0:
         _sct = _now_sct; //現在区画を覚えて次を待つ
         break;
-#ifdef CHECK
-    case SEC_1:
-        if(_now_sct == SEC_2) {
-            _sct_chg++;
-            if(plus){
-L_001:
-                if(++cnt >= 2){//2ポイントまたがった(正転)
-                    if(++i >= 10) i = 9; //周期変更
-                    if(i==9)plus=!plus;
-                    cnt = 0;
-                }
-            }else{
-L_002:
-                if(--cnt <= -2){//２ポイントまたがった（逆転）
-                    if(--i < 0) i = 0; //周期変更
-                    if(i==0)plus=!plus;
-                    cnt = 0;
-                }
-            }
-        }
-        _sct = _now_sct;
-        break;
-    case SEC_2:
-        if(_now_sct == SEC_1){
-            _sct_chg++;
-            if(plus) goto L_001;
-            else     goto L_002;   
-        }
-        _sct = _now_sct;
-        break;
-#else
     case SEC_1:
         if(_now_sct == SEC_2){
-            //正転またがり処理
-            if(++cnt >= 1){//2ポイントまたがった(正転)
-                if(++i >= 10) i = 9; //周期変更
-                cnt = 0;
-            }
+//            //正転またがり処理
+//            if(++cnt >= 2){//2ポイントまたがった(正転)
+//                if(++i >= 10) i = 9; //周期変更
+//                cnt = 0;
+//            }
+            plus = true;
         }
         if(_sct != _now_sct) _sct_chg++;
         _sct = _now_sct;
         break;
     case SEC_2:
         if(_now_sct == SEC_1){
-            //逆転またがり処理
-            if(--cnt <= -1){//２ポイントまたがった（逆転）
-                if(--i < 0) i = 0; //周期変更
-                cnt = 0;
-            }
+//            //逆転またがり処理
+//            if(--cnt <= -2){//２ポイントまたがった（逆転）
+//                if(--i < 0) i = 0; //周期変更
+//                cnt = 0;
+//            }
+            plus = false;
         }
         if(_sct != _now_sct) _sct_chg++;
         _sct = _now_sct;
         break;
     case SEC_3:
         if(_now_sct == SEC_4){
-            //正転またがり処理
-            if(++cnt >= 1){//2ポイントまたがった(正転)
-                if(++i >= 10) i = 9; //周期変更
-                cnt = 0;
-            }
+//            //正転またがり処理
+//            if(++cnt >= 2){//2ポイントまたがった(正転)
+//                if(++i >= 10) i = 9; //周期変更
+//                cnt = 0;
+//            }
+            plus = true;
         }
         if(_sct != _now_sct) _sct_chg++;
         _sct = _now_sct;
         break;
     case SEC_4:
         if(_now_sct == SEC_3){
-            //逆転またがり処理
-            if(--cnt <= -1){//２ポイントまたがった（逆転）
-                if(--i < 0) i = 0; //周期変更
-                cnt = 0;
-            }
+//            //逆転またがり処理
+//            if(--cnt <= -2){//２ポイントまたがった（逆転）
+//                if(--i < 0) i = 0; //周期変更
+//                cnt = 0;
+//            }
+            plus = false;
         }
         if(_sct != _now_sct) _sct_chg++;
         _sct = _now_sct;
         break;
-#endif
+    }
+    
+    //ゼロクロスチェック
+    if(_motor->ZERO >= 2){
+        _motor->ZERO = 0;
+        if(plus){
+            if(++i >= 10) i = 9; //周期変更
+        }else{
+            if(--i < 0) i = 0; //周期変更
+        }
     }
     
     return g_width[i]; //周期決定
@@ -255,7 +226,6 @@ bool Demo::ChangeCheck(bool change){
 
     if(g_lclkCnt){//ワンショット
         if(g_rclkCnt){//ワンショット
-            //if(g_bothCnt){//同時押し
             if(g_lclick.read() == 0 && g_rclick.read() == 0){
 
                 //左と右クリック同時押しでパターン切り替え
@@ -293,7 +263,7 @@ bool Demo::ChangeCheck(bool change){
         sprintf(buf2, "W%d", (int)_w);
         sprintf(buf3, "H%d", (int)_h);
         sprintf(buf4, "s%d", (int)_sct);
-        sprintf(buf5, "n%d", (int)_sct_chg);
+        sprintf(buf5, "z%d", (int)_motor->ZERO);
         _plot->label(buf1, buf2, buf3, buf4, buf5);
         
         //設定データのプロット（グラフ） ぐるぐる回している最中はやらない
