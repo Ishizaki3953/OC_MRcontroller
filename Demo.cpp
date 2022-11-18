@@ -218,14 +218,22 @@ bool Demo::ChangeCheck(bool change){
     static bool flg = false;
     static int mode = 0;
     
-    if(mode == 1){
+    if(mode == 0){//設定モードでない
+        if(g_rrlsCnt) {
+            __disable_irq();
+            g_rrlsCnt = 0;
+            g_rclkCnt = 0;//連続右クリックをクリア
+            __enable_irq();
+        }
+    }
+    else if(mode == 1){//周期設定中
         if(g_rrlsCnt){//周期設定モードかつ右リリース
             mode = 0;
             INTERRUPT_CLEAR();
             return false;
         }
     }
-    if(mode == 2){
+    else if(mode == 2){//波形設定中
         if(g_rrlsCnt && g_lrlsCnt){//波形設定モードかつ左右リリース
             mode = 0;
             INTERRUPT_CLEAR();
@@ -259,24 +267,6 @@ bool Demo::ChangeCheck(bool change){
             flg = true;//周期設定中
             INTERRUPT_CLEAR();
         }
-        /*static int step = 0;
-        switch(step){
-        case 0:
-            if(g_rclkCnt) step++;
-            break;
-        case 10000:
-            mode = 1;
-            //右クリック押しながらホイール回転で周期を変える
-            g_green = 1;
-            change = true;
-            flg = true;//周期設定中
-            INTERRUPT_CLEAR();
-            step = 1;
-            break;
-        default:
-            step++;
-            break;
-        }*/
     }
     
     float w = get_w();//ホイール回転による周期更新。常時実行
