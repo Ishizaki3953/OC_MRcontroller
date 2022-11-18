@@ -14,6 +14,7 @@
 
 class InterruptInEx{
 private:
+    bool _flg;
     bool _repeat;
     DigitalIn _pin;
     uint8_t _last_x;

@@ -27,10 +27,13 @@ void InterruptInEx::t_callback(){
     if(_pin == 0) {
         _func.call();//push event
         if(_repeat) {
-            _t.attach(this, &InterruptInEx::t_callback, 0.1);
+            _t.attach(this, &InterruptInEx::t_callback, 0.05);//0.02<= NG
+        }else{
+            _flg = false;//finish
         }
     } else {
         _func2.call();//pull event
+        _flg = false;//finish
     }
 }
 /**
@@ -41,6 +44,7 @@ void InterruptInEx::t_callback(){
 InterruptInEx::InterruptInEx(PinName pin, bool repeat): _pin(pin){
     _repeat = repeat;
     _last_x = _pin;
+    _flg = false;
 }
 /**
   * @brief loop
@@ -51,11 +55,17 @@ void InterruptInEx::loop(){
     uint8_t x = _pin;
     if(_last_x){
         if(!x){
-            _t.attach(this, &InterruptInEx::t_callback, 0.01);
+            if(!_flg){
+                _t.attach(this, &InterruptInEx::t_callback, 0.01);
+                _flg = true;
+            }
         }
     }else{
         if(x){
-            _t.attach(this, &InterruptInEx::t_callback, 0.01);
+            if(!_flg){
+                _t.attach(this, &InterruptInEx::t_callback, 0.01);
+                _flg = true;
+            }
         }
     }
     _last_x = x;

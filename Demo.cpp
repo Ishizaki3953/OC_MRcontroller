@@ -216,11 +216,20 @@ void Demo::setting_out(){
 bool Demo::ChangeCheck(bool change){
     char buf1[8], buf2[8], buf3[8], buf4[8], buf5[8];
     static bool flg = false;
-
     static int mode = 0;
-    if(mode == 1 && g_rrlsCnt){//周期設定モードかつ右リリース
-        mode = 0;
-        INTERRUPT_CLEAR();
+    
+    if(mode == 1){
+        if(g_rrlsCnt){//周期設定モードかつ右リリース
+            mode = 0;
+            INTERRUPT_CLEAR();
+            return false;
+        }
+    }
+    if(mode == 2){
+        if(g_rrlsCnt && g_lrlsCnt){//波形設定モードかつ左右リリース
+            mode = 0;
+            INTERRUPT_CLEAR();
+        }
         return false;
     }
 
@@ -232,6 +241,7 @@ bool Demo::ChangeCheck(bool change){
                 g_green = 1;
                 change = true;
                 flg = false;
+                mode = 2;
                 //パターン切り替え
                 if(_pattern == PAT_D) _pattern = PAT_A;
                 else if(_pattern == PAT_A) _pattern = PAT_B;
@@ -242,7 +252,6 @@ bool Demo::ChangeCheck(bool change){
         }
     } else {
         if(g_rclkCnt >= RLONG_TIME) mode = 1;//連続ショット
-        
         if(mode == 1 && g_rclkCnt){//周期設定モード
             //右クリック押しながらホイール回転で周期を変える
             g_green = 1;
@@ -250,6 +259,24 @@ bool Demo::ChangeCheck(bool change){
             flg = true;//周期設定中
             INTERRUPT_CLEAR();
         }
+        /*static int step = 0;
+        switch(step){
+        case 0:
+            if(g_rclkCnt) step++;
+            break;
+        case 10000:
+            mode = 1;
+            //右クリック押しながらホイール回転で周期を変える
+            g_green = 1;
+            change = true;
+            flg = true;//周期設定中
+            INTERRUPT_CLEAR();
+            step = 1;
+            break;
+        default:
+            step++;
+            break;
+        }*/
     }
     
     float w = get_w();//ホイール回転による周期更新。常時実行
