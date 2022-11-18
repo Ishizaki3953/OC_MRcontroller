@@ -33,7 +33,7 @@ class Demo{
 private:
     QueueEx _que;//RAW格納キュー
     
-    uint8_t _sct, _now_sct, _sct_chg;
+    uint8_t _sct, _now_sct;
     int _step;
     float _w, _h;//周期と電圧
     int _tickCnt;//タイマカウンタ

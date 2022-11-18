@@ -37,7 +37,6 @@ Demo::Demo(Motor *motor, ISensor *sensor, Plotter *plot, WheelSignal *wheel):
     _h = 100.0f;//電圧固定100%
     
     _sct = 0;
-    _sct_chg = 0;
 }
 /**
   * @brief setting load
@@ -125,7 +124,6 @@ float Demo::get_w(){
 //            }
             plus = true;
         }
-        if(_sct != _now_sct) _sct_chg++;
         _sct = _now_sct;
         break;
     case SEC_2:
@@ -137,7 +135,6 @@ float Demo::get_w(){
 //            }
             plus = false;
         }
-        if(_sct != _now_sct) _sct_chg++;
         _sct = _now_sct;
         break;
     case SEC_3:
@@ -149,7 +146,6 @@ float Demo::get_w(){
 //            }
             plus = true;
         }
-        if(_sct != _now_sct) _sct_chg++;
         _sct = _now_sct;
         break;
     case SEC_4:
@@ -161,7 +157,6 @@ float Demo::get_w(){
 //            }
             plus = false;
         }
-        if(_sct != _now_sct) _sct_chg++;
         _sct = _now_sct;
         break;
     }
@@ -214,8 +209,6 @@ void Demo::setting_out(){
   * @retval true: 設定データ更新
   */
 bool Demo::ChangeCheck(bool change){
-    char buf1[8], buf2[8], buf3[8], buf4[8], buf5[8];
-    static bool flg = false;
     static int mode = 0;
     
     if(mode == 0){//設定モードでない
@@ -248,7 +241,6 @@ bool Demo::ChangeCheck(bool change){
                 //左と右クリック同時押しでパターン切り替え
                 g_green = 1;
                 change = true;
-                flg = false;
                 mode = 2;
                 //パターン切り替え
                 if(_pattern == PAT_D) _pattern = PAT_A;
@@ -264,27 +256,27 @@ bool Demo::ChangeCheck(bool change){
             //右クリック押しながらホイール回転で周期を変える
             g_green = 1;
             change = true;
-            flg = true;//周期設定中
             INTERRUPT_CLEAR();
         }
     }
     
-    float w = get_w();//ホイール回転による周期更新。常時実行
-    if(mode == 1){
+    if(mode == 1){//周期設定モード
+        float w = get_w();//ホイール回転による周期更新。常時実行
         _w = w;
     }
     
     if(change){
+        char buf1[8], buf2[8], buf3[8], buf4[8], buf5[8];
         //ラベルプロット
         sprintf(buf1, "P%d", _pattern+1);
         sprintf(buf2, "W%d", (int)_w);
         sprintf(buf3, "H%d", (int)_h);
         sprintf(buf4, "s%d", (int)_sct);
         sprintf(buf5, "z%d", (int)_motor->ZERO);
-        _plot->label(buf1, buf2, buf3, buf4, buf5);
+        _plot->label(buf1, buf2, buf3);
         
         //設定データのプロット（グラフ） ぐるぐる回している最中はやらない
-        if(!flg){
+        if(mode == 2){//波形設定モード
             setting_out();
         }
         g_green = 0;
