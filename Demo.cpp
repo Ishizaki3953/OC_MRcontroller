@@ -102,7 +102,6 @@ float Demo::get_w(){
     };
     static int i = 9; //index: default=100%
     static int cnt = 0;
-    static bool plus = true;
 
     //現在区画の確認
     uint16_t x = _raw2;
@@ -114,6 +113,7 @@ float Demo::get_w(){
     switch(_sct){
     case 0:
         _sct = _now_sct; //現在区画を覚えて次を待つ
+        _plus = false;
         break;
     case SEC_1:
         if(_now_sct == SEC_2){
@@ -122,8 +122,8 @@ float Demo::get_w(){
 //                if(++i >= 10) i = 9; //周期変更
 //                cnt = 0;
 //            }
-            plus = true;
-        }
+            _plus = true;
+        } else if(_now_sct == SEC_4) _plus = false;
         _sct = _now_sct;
         break;
     case SEC_2:
@@ -133,8 +133,8 @@ float Demo::get_w(){
 //                if(--i < 0) i = 0; //周期変更
 //                cnt = 0;
 //            }
-            plus = false;
-        }
+            _plus = false;
+        } else if(_now_sct == SEC_1) _plus = false;
         _sct = _now_sct;
         break;
     case SEC_3:
@@ -144,8 +144,8 @@ float Demo::get_w(){
 //                if(++i >= 10) i = 9; //周期変更
 //                cnt = 0;
 //            }
-            plus = true;
-        }
+            _plus = true;
+        } else if(_now_sct == SEC_2) _plus = false;
         _sct = _now_sct;
         break;
     case SEC_4:
@@ -155,8 +155,8 @@ float Demo::get_w(){
 //                if(--i < 0) i = 0; //周期変更
 //                cnt = 0;
 //            }
-            plus = false;
-        }
+            _plus = false;
+        } else if(_now_sct == SEC_3) _plus = false;
         _sct = _now_sct;
         break;
     }
@@ -164,7 +164,7 @@ float Demo::get_w(){
     //ゼロクロスチェック
     if(_motor->ZERO >= 2){
         _motor->ZERO = 0;
-        if(plus){
+        if(_plus){
             if(++i >= 10) i = 9; //周期変更
         }else{
             if(--i < 0) i = 0; //周期変更
@@ -271,9 +271,9 @@ bool Demo::ChangeCheck(bool change){
         sprintf(buf1, "P%d", _pattern+1);
         sprintf(buf2, "W%d", (int)_w);
         sprintf(buf3, "H%d", (int)_h);
-        sprintf(buf4, "s%d", (int)_sct);
+        sprintf(buf4, "s%d", (int)_plus);
         sprintf(buf5, "z%d", (int)_motor->ZERO);
-        _plot->label(buf1, buf2, buf3);
+        _plot->label(buf1, buf2, buf3, buf4);
         
         //設定データのプロット（グラフ） ぐるぐる回している最中はやらない
         if(mode == 2){//波形設定モード
@@ -309,8 +309,6 @@ void Demo::start(){//setting -> demo
     _tick.attach(this, &Demo::tick_interrupt, 0.001);//1ms
     if(ChangeCheck(true)){//true: 強制的に設定データの初期化
         _step = 1;//設定データプロット出力へ
-    } else {
-        _step = 0;//ここはありえない
     }
 }
 /**
