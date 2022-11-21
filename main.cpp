@@ -31,7 +31,7 @@ static Terminal g_term(&pc);
 /* BUTTON --------------------------------------------------------------------*/
 #include "InterruptInEx.h"
 
-InterruptInEx g_lclick(PA_4, false);//左クリック(ワンショット)
+InterruptInEx g_lclick(PA_4, true);//左クリック(ワンショット)
 InterruptInEx g_rclick(PA_3, true);//右クリック(リピートボタン)
 
 int g_lclkCnt = 0;//左クリックカウント

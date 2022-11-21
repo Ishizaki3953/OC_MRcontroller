@@ -68,19 +68,12 @@ void Demo::setting_load(){
     table.end_read();//読み込み終了
 }
 /**
-  * @brief get width (周期)
+  * @brief rotation check
   * @param  none
-  * @retval width
+  * @retval none
   */
-float Demo::get_w(){
-    // ad
-    //       ad   w          y
-    //[  8%] 100/(  8/100)=> ad=1250%1024=[226]
-    //[ 10%] 100/( 10/100)=> ad=1000%1024=[1000]
-    //[ 50%] 100/( 50/100)=> ad=200%1024=[200]
-    //[ 90%] 100/( 90/100)=> ad=111%1024=[111]
-    //[100%] 100/(100/100)=> ad=100%1024=[100]
-
+void Demo::rotate_check(){
+    
     //              *               *
     //      0      256     512     768     1024
     //      +-------+-------+-------+-------+
@@ -100,9 +93,7 @@ float Demo::get_w(){
     enum Section {//区画の定義
         NONE=0, SEC_1, SEC_2, SEC_3, SEC_4,
     };
-    static int i = 9; //index: default=100%
-    static int cnt = 0;
-
+    
     //現在区画の確認
     uint16_t x = _raw2;
     if(0 <= x && x < 256) _now_sct = SEC_1;
@@ -160,6 +151,22 @@ float Demo::get_w(){
         _sct = _now_sct;
         break;
     }
+}
+/**
+  * @brief get width (周期)
+  * @param  none
+  * @retval width
+  */
+float Demo::get_w(){
+    // ad
+    //       ad   w          y
+    //[  8%] 100/(  8/100)=> ad=1250%1024=[226]
+    //[ 10%] 100/( 10/100)=> ad=1000%1024=[1000]
+    //[ 50%] 100/( 50/100)=> ad=200%1024=[200]
+    //[ 90%] 100/( 90/100)=> ad=111%1024=[111]
+    //[100%] 100/(100/100)=> ad=100%1024=[100]
+
+    static int i = 9; //index: default=100%
     
     //ゼロクロスチェック
     if(_motor->ZERO >= 2){
@@ -172,6 +179,26 @@ float Demo::get_w(){
     }
     
     return g_width[i]; //周期決定
+}
+/**
+  * @brief get height (電圧)
+  * @param  none
+  * @retval height
+  */
+float Demo::get_h(){
+    static int i = 9;
+    
+    //ゼロクロスチェック
+    if(_motor->ZERO >= 2){
+        _motor->ZERO = 0;
+        if(_plus){
+            if(++i >= 10) i = 9; //電圧変更
+        }else{
+            if(--i < 0) i = 0; //電圧変更
+        }
+    }
+    
+    return g_height[i]; //電圧決定
 }
 /**
   * @brief ad convert
@@ -218,6 +245,12 @@ bool Demo::ChangeCheck(bool change){
             g_rclkCnt = 0;//連続右クリックをクリア
             __enable_irq();
         }
+        if(g_lrlsCnt) {
+            __disable_irq();
+            g_lrlsCnt = 0;
+            g_lclkCnt = 0;//連続左クリックをクリア
+            __enable_irq();
+        }
     }
     else if(mode == 1){//周期設定中
         if(g_rrlsCnt){//周期設定モードかつ右リリース
@@ -232,6 +265,12 @@ bool Demo::ChangeCheck(bool change){
             INTERRUPT_CLEAR();
         }
         return false;
+    } else if(mode == 3){//電圧設定中
+        if(g_lrlsCnt){//電圧設定モードかつ左リリース
+            mode = 0;
+            INTERRUPT_CLEAR();
+            return false;
+        }
     }
 
     if(g_lclkCnt){//ワンショット
@@ -249,6 +288,14 @@ bool Demo::ChangeCheck(bool change){
                 else if(_pattern == PAT_C) _pattern = PAT_D;
             }
             INTERRUPT_CLEAR();
+        }else{
+            //左クリック押しながらホイール回転で電圧を変える
+            if(g_lclkCnt >= LLONG_TIME) mode = 3;
+            if(mode == 3 && g_lclkCnt){
+                g_green = 1;
+                change = true;
+                INTERRUPT_CLEAR();
+            }
         }
     } else {
         if(g_rclkCnt >= RLONG_TIME) mode = 1;//連続ショット
@@ -261,8 +308,12 @@ bool Demo::ChangeCheck(bool change){
     }
     
     if(mode == 1){//周期設定モード
-        float w = get_w();//ホイール回転による周期更新。常時実行
-        _w = w;
+        rotate_check();
+        _w = get_w();//ホイール回転による周期更新。常時実行
+    }
+    else if(mode == 3){//電圧設定モード
+        rotate_check();
+        _h = get_h();//ホイール回転による電圧更新
     }
     
     if(change){
@@ -273,7 +324,7 @@ bool Demo::ChangeCheck(bool change){
         sprintf(buf3, "H%d", (int)_h);
         sprintf(buf4, "s%d", (int)_plus);
         sprintf(buf5, "z%d", (int)_motor->ZERO);
-        _plot->label(buf1, buf2, buf3, buf4);
+        _plot->label(buf1, buf2, buf3);
         
         //設定データのプロット（グラフ） ぐるぐる回している最中はやらない
         if(mode == 2){//波形設定モード

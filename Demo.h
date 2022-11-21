@@ -60,9 +60,11 @@ private:
 //    bool calc_signal_a(uint16_t raw);
 //    bool calc_signal_b(uint16_t raw);
 
+    void rotate_check();
     float ZeroTorqueCheck();
     void setting_load();
     float get_w();
+    float get_h();
     uint16_t ad_conv(uint16_t ad, float w);
     void tick_interrupt(void);
     void setting_out();
