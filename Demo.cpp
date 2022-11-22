@@ -54,16 +54,7 @@ void Demo::setting_load(){
         _pwm[i][0] = vals[0];
         _pwm[i][1] = vals[1];
         _pwm[i][2] = vals[2];
-        _pwm[i][3] = vals[3];
-              
-//        //パターンA
-//       if(i<=512) signal_pat_a[i] = 0;
-//        else signal_pat_a[i] = 1;
-//        //パターンB
-//        if(i<=256) signal_pat_b[i] = 0;
-//        else if (i<=768) signal_pat_b[i] = 1;
-//        else signal_pat_b[i] = 0;       
-
+        _pwm[i][3] = vals[3];              
     }
     table.end_read();//読み込み終了
 }
@@ -107,47 +98,23 @@ void Demo::rotate_check(){
         _plus = false;
         break;
     case SEC_1:
-        if(_now_sct == SEC_2){
-//            //正転またがり処理
-//            if(++cnt >= 2){//2ポイントまたがった(正転)
-//                if(++i >= 10) i = 9; //周期変更
-//                cnt = 0;
-//            }
-            _plus = true;
-        } else if(_now_sct == SEC_4) _plus = false;
+        if(_now_sct == SEC_2) _plus = true;
+        else if(_now_sct == SEC_4) _plus = false;
         _sct = _now_sct;
         break;
     case SEC_2:
-        if(_now_sct == SEC_1){
-//            //逆転またがり処理
-//            if(--cnt <= -2){//２ポイントまたがった（逆転）
-//                if(--i < 0) i = 0; //周期変更
-//                cnt = 0;
-//            }
-            _plus = false;
-        } else if(_now_sct == SEC_1) _plus = false;
+        if(_now_sct == SEC_1) _plus = false;
+        else if(_now_sct == SEC_3) _plus = true;
         _sct = _now_sct;
         break;
     case SEC_3:
-        if(_now_sct == SEC_4){
-//            //正転またがり処理
-//            if(++cnt >= 2){//2ポイントまたがった(正転)
-//                if(++i >= 10) i = 9; //周期変更
-//                cnt = 0;
-//            }
-            _plus = true;
-        } else if(_now_sct == SEC_2) _plus = false;
+        if(_now_sct == SEC_4) _plus = true;
+        else if(_now_sct == SEC_2) _plus = false;
         _sct = _now_sct;
         break;
     case SEC_4:
-        if(_now_sct == SEC_3){
-//            //逆転またがり処理
-//            if(--cnt <= -2){//２ポイントまたがった（逆転）
-//                if(--i < 0) i = 0; //周期変更
-//                cnt = 0;
-//            }
-            _plus = false;
-        } else if(_now_sct == SEC_3) _plus = false;
+        if(_now_sct == SEC_3) _plus = false;
+        else if(_now_sct == SEC_1) _plus = true;
         _sct = _now_sct;
         break;
     }
@@ -346,7 +313,6 @@ float Demo::calc_pwm(uint16_t raw){//raw < 4096
     float pwm2 = pwm * _h;
     float pwm3 = pwm2 / 127.0f;
     
-    //printf("[AD]%d->%d, [VAL]%d->%d%%, w=%f, h=%f\n", raw, _raw2, pwm, (int)pwm3, _w, _h);
     return pwm3;
 }
 /**
@@ -402,25 +368,6 @@ float Demo::ZeroTorqueCheck(){
     return pwm;
 }
 
-///**
-//  * @brief calc_signal_a
-//  * @param  raw(AD)
-//  * @retval signal_a
-//  */
-//bool Demo::calc_signal_a(uint16_t raw){//raw < 4096
-//    int _raw_calc_signal_a = ad_conv(raw);//YOKO STRETCH
-//    return signal_pat_a[_raw_calc_signal_a];//_raw_calc_signal_a < 1024
-//}
-///**
-//  * @brief calc_signal_b
-//  * @param  raw(AD)
-//  * @retval signal_b
-//  */
-//bool Demo::calc_signal_b(uint16_t raw){//raw < 4096
-//    int _raw_calc_signal_b = ad_conv(raw);//YOKO STRETCH
-//    return signal_pat_b[_raw_calc_signal_b];//raw2 < 1024
-//}
-
 /**
   * @brief デモ本体。メインループで毎回実行すること
   * @param  none
@@ -451,13 +398,7 @@ void Demo::loop(){
             float pwm = ZeroTorqueCheck();
             _motor->pwmout(pwm);
 
-//            //dummy encoder
-//            *_signal_a = (calc_signal_a(_raw) > 0)? 1: 0;
-//            
-//            //正転
-//            *_signal_b = (calc_signal_b(_raw) > 0)? 0: 1;
-
-            //上記のものを下記で計算させる
+            //下記でエンコーダ計算させる
             _wheel->calc(_raw2); //raw2は計算済み -> ZeroTorqueCheck
 
             //10ms周期でPWMプロット
