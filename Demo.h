@@ -60,7 +60,7 @@ private:
 //    bool calc_signal_a(uint16_t raw);
 //    bool calc_signal_b(uint16_t raw);
 
-    void rotate_check();
+//    void rotate_check();
     float ZeroTorqueCheck();
     void setting_load();
     float get_w();

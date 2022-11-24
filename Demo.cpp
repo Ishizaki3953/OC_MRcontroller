@@ -58,12 +58,15 @@ void Demo::setting_load(){
     }
     table.end_read();//読み込み終了
 }
+    //static int ii = 9;
+    //static int jj = 9;
+
 /**
   * @brief rotation check
   * @param  none
   * @retval none
   */
-void Demo::rotate_check(){
+/*void Demo::rotate_check(){
     
     //              *               *
     //      0      256     512     768     1024
@@ -84,6 +87,7 @@ void Demo::rotate_check(){
     enum Section {//区画の定義
         NONE=0, SEC_1, SEC_2, SEC_3, SEC_4,
     };
+    static int i = 9;
     
     //現在区画の確認
     uint16_t x = _raw2;
@@ -98,27 +102,39 @@ void Demo::rotate_check(){
         _plus = false;
         break;
     case SEC_1:
-        if(_now_sct == SEC_2) _plus = true;
+        if(_now_sct == SEC_2) {
+            if(++i >= 10) i = 9; //周期変更
+            _plus = true;
+        }
         else if(_now_sct == SEC_4) _plus = false;
         _sct = _now_sct;
         break;
     case SEC_2:
-        if(_now_sct == SEC_1) _plus = false;
+        if(_now_sct == SEC_1) {
+            if(--i < 0) i = 0; //周期変更
+            _plus = false;
+        }
         else if(_now_sct == SEC_3) _plus = true;
         _sct = _now_sct;
         break;
     case SEC_3:
-        if(_now_sct == SEC_4) _plus = true;
+        if(_now_sct == SEC_4) {
+            if(++i >= 10) i = 9; //周期変更
+            _plus = true;
+        }
         else if(_now_sct == SEC_2) _plus = false;
         _sct = _now_sct;
         break;
     case SEC_4:
-        if(_now_sct == SEC_3) _plus = false;
+        if(_now_sct == SEC_3) {
+            if(--i < 0) i = 0; //周期変更
+            _plus = false;
+        }
         else if(_now_sct == SEC_1) _plus = true;
         _sct = _now_sct;
         break;
     }
-}
+}*/
 /**
   * @brief get width (周期)
   * @param  none
@@ -134,16 +150,64 @@ float Demo::get_w(){
     //[100%] 100/(100/100)=> ad=100%1024=[100]
 
     static int i = 9; //index: default=100%
+    enum Section {//区画の定義
+        NONE=0, SEC_1, SEC_2, SEC_3, SEC_4,
+    };
     
+    //現在区画の確認
+    uint16_t x = _raw2;
+    if(0 <= x && x < 256) _now_sct = SEC_1;
+    else if(256 <= x && x < 512) _now_sct = SEC_2;
+    else if(512 <= x && x < 768) _now_sct = SEC_3;
+    else if(768 <= x && x < 1024) _now_sct = SEC_4;
+
+    switch(_sct){
+    case 0:
+        _sct = _now_sct; //現在区画を覚えて次を待つ
+        _plus = false;
+        break;
+    case SEC_1:
+        if(_now_sct == SEC_2) {
+            if(++i >= 10) i = 9; //周期変更
+            _plus = true;
+        }
+        else if(_now_sct == SEC_4) _plus = false;
+        _sct = _now_sct;
+        break;
+    case SEC_2:
+        if(_now_sct == SEC_1) {
+            if(--i < 0) i = 0; //周期変更
+            _plus = false;
+        }
+        else if(_now_sct == SEC_3) _plus = true;
+        _sct = _now_sct;
+        break;
+    case SEC_3:
+        if(_now_sct == SEC_4) {
+            if(++i >= 10) i = 9; //周期変更
+            _plus = true;
+        }
+        else if(_now_sct == SEC_2) _plus = false;
+        _sct = _now_sct;
+        break;
+    case SEC_4:
+        if(_now_sct == SEC_3) {
+            if(--i < 0) i = 0; //周期変更
+            _plus = false;
+        }
+        else if(_now_sct == SEC_1) _plus = true;
+        _sct = _now_sct;
+        break;
+    }    
     //ゼロクロスチェック
-    if(_motor->ZERO >= 2){
+    /*if(_motor->ZERO >= 2){
         _motor->ZERO = 0;
         if(_plus){
             if(++i >= 10) i = 9; //周期変更
         }else{
             if(--i < 0) i = 0; //周期変更
         }
-    }
+    }*/
     
     return g_width[i]; //周期決定
 }
@@ -153,17 +217,65 @@ float Demo::get_w(){
   * @retval height
   */
 float Demo::get_h(){
-    static int i = 9;
+    static int i = 9; //index: default=100%
+    enum Section {//区画の定義
+        NONE=0, SEC_1, SEC_2, SEC_3, SEC_4,
+    };
     
+    //現在区画の確認
+    uint16_t x = _raw2;
+    if(0 <= x && x < 256) _now_sct = SEC_1;
+    else if(256 <= x && x < 512) _now_sct = SEC_2;
+    else if(512 <= x && x < 768) _now_sct = SEC_3;
+    else if(768 <= x && x < 1024) _now_sct = SEC_4;
+
+    switch(_sct){
+    case 0:
+        _sct = _now_sct; //現在区画を覚えて次を待つ
+        _plus = false;
+        break;
+    case SEC_1:
+        if(_now_sct == SEC_2) {
+            if(++i >= 10) i = 9; //周期変更
+            _plus = true;
+        }
+        else if(_now_sct == SEC_4) _plus = false;
+        _sct = _now_sct;
+        break;
+    case SEC_2:
+        if(_now_sct == SEC_1) {
+            if(--i < 0) i = 0; //周期変更
+            _plus = false;
+        }
+        else if(_now_sct == SEC_3) _plus = true;
+        _sct = _now_sct;
+        break;
+    case SEC_3:
+        if(_now_sct == SEC_4) {
+            if(++i >= 10) i = 9; //周期変更
+            _plus = true;
+        }
+        else if(_now_sct == SEC_2) _plus = false;
+        _sct = _now_sct;
+        break;
+    case SEC_4:
+        if(_now_sct == SEC_3) {
+            if(--i < 0) i = 0; //周期変更
+            _plus = false;
+        }
+        else if(_now_sct == SEC_1) _plus = true;
+        _sct = _now_sct;
+        break;
+    }        
     //ゼロクロスチェック
-    if(_motor->ZERO >= 2){
+    /*if(_motor->ZERO >= 2){
         _motor->ZERO = 0;
         if(_plus){
             if(++i >= 10) i = 9; //電圧変更
         }else{
             if(--i < 0) i = 0; //電圧変更
         }
-    }
+    }*/
     
     return g_height[i]; //電圧決定
 }
@@ -275,11 +387,11 @@ bool Demo::ChangeCheck(bool change){
     }
     
     if(mode == 1){//周期設定モード
-        rotate_check();
+        //rotate_check();
         _w = get_w();//ホイール回転による周期更新。常時実行
     }
     else if(mode == 3){//電圧設定モード
-        rotate_check();
+        //rotate_check();
         _h = get_h();//ホイール回転による電圧更新
     }
     
