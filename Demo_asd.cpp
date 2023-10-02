@@ -1,22 +1,24 @@
 /**
   ******************************************************************************
-  * @file           : Demo.cpp
-  * @brief          : demo mode
+  * @file           : Demo_asd.cpp
+  * @brief          : demo_asd mode
   ******************************************************************************
   * @attention
   *
   ******************************************************************************
   */
-#include "Demo.h"
+#include "Demo_asd.h"
 #include "common.h"
 #include "config.h"
+#include <cstdint>
+#include "AngleCompensation.h"
 
-#define INTERRUPT_CLEAR()  \
+#define INTERRUPT_CLEAR_ASD()  \
         __disable_irq();\
-        g_lclkCnt = 0;\
-        g_rclkCnt = 0;\
-        g_lrlsCnt = 0;\
-        g_rrlsCnt = 0;\
+        g_lclkCnt_asd = 0;\
+        g_rclkCnt_asd = 0;\
+        g_lrlsCnt_asd = 0;\
+        g_rrlsCnt_asd = 0;\
         __enable_irq();
 
 /**
@@ -24,12 +26,18 @@
   * @param  Motor:motor  sensor:encoder  plot:plotter
   * @retval none
   */
-Demo::Demo(Motor *motor, ISensor *sensor, Plotter *plot, WheelSignal *wheel):
+#ifdef PLOT_ASD
+Demo_asd::Demo_asd(Motor *motor, ISensor *sensor, Plotter *plot, WheelSignal *wheel):
+#else
+Demo_asd::Demo_asd(Motor *motor, ISensor *sensor, WheelSignal *wheel):
+#endif
     _que(sizeof(uint16_t), ZERO_TORQUE){
 
     _motor = motor;
     _sensor = sensor;
+#ifdef PLOT_ASD
     _plot = plot;
+#endif
     _wheel = wheel;
 
     _pattern = PAT_A;
@@ -43,7 +51,7 @@ Demo::Demo(Motor *motor, ISensor *sensor, Plotter *plot, WheelSignal *wheel):
   * @param  none
   * @retval none
   */
-void Demo::setting_load(){
+void Demo_asd::setting_load(){
     //フラッシュからデータを読み込む
     Table table;
     int8_t vals[PAT_MAX];
@@ -62,7 +70,7 @@ void Demo::setting_load(){
   * @param  none
   * @retval width
   */
-float Demo::get_w(){
+float Demo_asd::get_w(){
     // ad
     //       ad   w          y
     //[  8%] 100/(  8/100)=> ad=1250%1024=[226]
@@ -134,7 +142,7 @@ float Demo::get_w(){
   * @param  none
   * @retval height
   */
-float Demo::get_h(){
+float Demo_asd::get_h(){
     static int i = 9; //index: default=100%
     enum Section {//区画の定義
         NONE=0, SEC_1, SEC_2, SEC_3, SEC_4,
@@ -193,8 +201,10 @@ float Demo::get_h(){
   * @param  ad
   * @retval convert ad
   */
-uint16_t Demo::ad_conv(uint16_t ad, float w){//ad:0-4095
-    float x = ad / (w / 100.0f);
+uint16_t Demo_asd::ad_conv(uint16_t ad, float w){//ad:0-4095
+    //float x = ad / (w / 100.0f);
+    uint16_t nuAd = AngleCompensation(ad);  // 角度補正処理 2023/03/22 Add
+    float x = nuAd / (w / 100.0f);
     int ad2 = (int)x % 1024;
     return (uint16_t)ad2;
 }
@@ -203,7 +213,7 @@ uint16_t Demo::ad_conv(uint16_t ad, float w){//ad:0-4095
   * @param  none
   * @retval none
   */
-void Demo::tick_interrupt(void){
+void Demo_asd::tick_interrupt(void){
     _tickCnt++;
 }
 /**
@@ -211,59 +221,61 @@ void Demo::tick_interrupt(void){
   * @param  none
   * @retval none
   */
-void Demo::setting_out(){
+#ifdef PLOT_ASD
+void Demo_asd::setting_out(){
     for(uint16_t raw = 0; raw < 500; raw++){//500plot
         float pwm = calc_pwm(raw);
         _plot->plot(pwm);
     }
 }
+#endif
 
 /**
   * @brief ハードウェアボタンのチェック
   * @param  change is 強制的に設定データ更新
   * @retval true: 設定データ更新
   */
-bool Demo::ChangeCheck(bool change){
+bool Demo_asd::ChangeCheck(bool change){
     static int mode = 0;
     
     if(mode == 0){//設定モードでない
-        if(g_rrlsCnt) {
+        if(g_rrlsCnt_asd) {
             __disable_irq();
-            g_rrlsCnt = 0;
-            g_rclkCnt = 0;//連続右クリックをクリア
+            g_rrlsCnt_asd = 0;
+            g_rclkCnt_asd = 0;//連続右クリックをクリア
             __enable_irq();
         }
-        if(g_lrlsCnt) {
+        if(g_lrlsCnt_asd) {
             __disable_irq();
-            g_lrlsCnt = 0;
-            g_lclkCnt = 0;//連続左クリックをクリア
+            g_lrlsCnt_asd = 0;
+            g_lclkCnt_asd = 0;//連続左クリックをクリア
             __enable_irq();
         }
     }
     else if(mode == 1){//周期設定中
-        if(g_rrlsCnt){//周期設定モードかつ右リリース
+        if(g_rrlsCnt_asd){//周期設定モードかつ右リリース
             mode = 0;
-            INTERRUPT_CLEAR();
+            INTERRUPT_CLEAR_ASD();
             return false;
         }
     }
     else if(mode == 2){//波形設定中
-        if(g_rrlsCnt && g_lrlsCnt){//波形設定モードかつ左右リリース
+        if(g_rrlsCnt_asd && g_lrlsCnt_asd){//波形設定モードかつ左右リリース
             mode = 0;
-            INTERRUPT_CLEAR();
+            INTERRUPT_CLEAR_ASD();
         }
         return false;
     } else if(mode == 3){//電圧設定中
-        if(g_lrlsCnt){//電圧設定モードかつ左リリース
+        if(g_lrlsCnt_asd){//電圧設定モードかつ左リリース
             mode = 0;
-            INTERRUPT_CLEAR();
+            INTERRUPT_CLEAR_ASD();
             return false;
         }
     }
 
-    if(g_lclkCnt){//ワンショット
-        if(g_rclkCnt){//ワンショット
-            if(g_lclick.read() == 0 && g_rclick.read() == 0){
+    if(g_lclkCnt_asd){//ワンショット
+        if(g_rclkCnt_asd){//ワンショット
+            if(g_lclick_asd.read() == 0 && g_rclick_asd.read() == 0){
 
                 //左と右クリック同時押しでパターン切り替え
                 g_green = 1;
@@ -275,23 +287,23 @@ bool Demo::ChangeCheck(bool change){
                 else if(_pattern == PAT_B) _pattern = PAT_C;
                 else if(_pattern == PAT_C) _pattern = PAT_D;
             }
-            INTERRUPT_CLEAR();
+            INTERRUPT_CLEAR_ASD();
         }else{
             //左クリック押しながらホイール回転で電圧を変える
-            if(g_lclkCnt >= LLONG_TIME) mode = 3;
-            if(mode == 3 && g_lclkCnt){
+            if(g_lclkCnt_asd >= LLONG_TIME) mode = 3;
+            if(mode == 3 && g_lclkCnt_asd){
                 g_green = 1;
                 change = true;
-                INTERRUPT_CLEAR();
+                INTERRUPT_CLEAR_ASD();
             }
         }
     } else {
-        if(g_rclkCnt >= RLONG_TIME) mode = 1;//連続ショット
-        if(mode == 1 && g_rclkCnt){//周期設定モード
+        if(g_rclkCnt_asd >= RLONG_TIME) mode = 1;//連続ショット
+        if(mode == 1 && g_rclkCnt_asd){//周期設定モード
             //右クリック押しながらホイール回転で周期を変える
             g_green = 1;
             change = true;
-            INTERRUPT_CLEAR();
+            INTERRUPT_CLEAR_ASD();
         }
     }
     
@@ -303,6 +315,7 @@ bool Demo::ChangeCheck(bool change){
     }
     
     if(change){
+#ifdef PLOT_ASD
         char buf1[8], buf2[8], buf3[8], buf4[8], buf5[8];
         //ラベルプロット
         sprintf(buf1, "P%d", _pattern+1);
@@ -316,8 +329,10 @@ bool Demo::ChangeCheck(bool change){
         if(mode == 2){//波形設定モード
             setting_out();
         }
+#endif
         g_green = 0;
     }
+
     return change;
 }
 /**
@@ -325,13 +340,35 @@ bool Demo::ChangeCheck(bool change){
   * @param  raw(AD) <4096
   * @retval pwm(-100 +100)
   */
-float Demo::calc_pwm(uint16_t raw){//raw < 4096 
+float Demo_asd::calc_pwm(uint16_t raw){//raw < 4096 
     _raw2 = ad_conv(raw, _w);//YOKO STRETCH
     int pwm = _pwm[_raw2][_pattern];//raw2 < 1024
     
     float pwm2 = pwm * _h;
     float pwm3 = pwm2 / 127.0f;
-    
+
+    diff_raw = (int16_t)raw - (int16_t)before_raw;
+    if(0 <= diff_raw && diff_raw < 16){// 通常：1rps, 高速:4rps~16rps,4rps*4096/1000ms=16rot/ms
+        _plus2 = true; //奥スクロール
+        fast_flg = false;
+    }
+    else if (-16 < diff_raw && diff_raw < 0){
+        _plus2 = false; //手前スクロール
+        fast_flg = false;
+    }
+    else if (diff_raw > 2048){// 4096を超える場合
+        _plus2 = false;
+        fast_flg = false;
+    }
+    else if (diff_raw < -2048){// 0を超える場合
+        _plus2 = true;
+        fast_flg = false;
+    }
+    else{//高速回転時
+        fast_flg = true;
+    }
+
+    before_raw = raw;//前回値に格納
     return pwm3;
 }
 /**
@@ -339,10 +376,10 @@ float Demo::calc_pwm(uint16_t raw){//raw < 4096
   * @param  none
   * @retval none
   */
-void Demo::start(){//setting -> demo
+void Demo_asd::start(){//setting -> demo
     setting_load();
     _tickCnt = 0;
-    _tick.attach(this, &Demo::tick_interrupt, 0.001);//1ms
+    _tick.attach(this, &Demo_asd::tick_interrupt, 0.001);//1ms
     if(ChangeCheck(true)){//true: 強制的に設定データの初期化
         _step = 1;//設定データプロット出力へ
     }
@@ -352,7 +389,7 @@ void Demo::start(){//setting -> demo
   * @param  none
   * @retval pwm
   */
-float Demo::ZeroTorqueCheck(){
+float Demo_asd::ZeroTorqueCheck(){
            
     _que.Put(&_raw);//RAWをストック(max500)
     
@@ -392,7 +429,7 @@ float Demo::ZeroTorqueCheck(){
   * @param  none
   * @retval none
   */
-void Demo::loop(){
+void Demo_asd::loop(){
     static int cnt = 0;
     bool ret;
         
@@ -418,19 +455,20 @@ void Demo::loop(){
             _motor->pwmout(pwm);
 
             //下記でエンコーダ計算させる
-            _wheel->calc(_raw2); //raw2は計算済み -> ZeroTorqueCheck
+            _wheel->calc(_raw2,_plus2,fast_flg); //raw2は計算済み -> ZeroTorqueCheck
 
+#ifdef PLOT_ASD
             //10ms周期でPWMプロット
             if(++cnt >= 10){//10ms period
                 cnt = 0;
                 
                 _plot->plot(pwm);
             }
-            
+#endif
+
             if(_tickCnt >= 2) NOP();//2ms passed error
-            
             _tickCnt = 0;
-            
+    
         }else if(_tickCnt >= 2){//2ms passed error
             NOP();
         }

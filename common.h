@@ -17,16 +17,33 @@
 typedef void (*CALLBACK)(void);
 
 #define NOP()
+//#define PLOT_ASW
+//#define PLOT_ASD
+
+typedef enum{
+    PAT_A=0,
+    PAT_B,
+    PAT_C,
+    PAT_D,
+    PAT_MAX,
+} PATTERN;
 
 extern SerialEx pc;
 extern DigitalOut g_green;
-extern InterruptInEx g_lclick;
-extern InterruptInEx g_rclick;
+extern InterruptInEx g_lclick_asw;
+extern InterruptInEx g_rclick_asw;
+extern InterruptInEx g_lclick_asd;
+extern InterruptInEx g_rclick_asd;
 
-extern int g_lclkCnt;
-extern int g_rclkCnt;
-extern int g_lrlsCnt;
-extern int g_rrlsCnt;
+extern int g_lclkCnt_asw;
+extern int g_rclkCnt_asw;
+extern int g_lrlsCnt_asw;
+extern int g_rrlsCnt_asw;
+
+extern int g_lclkCnt_asd;
+extern int g_rclkCnt_asd;
+extern int g_lrlsCnt_asd;
+extern int g_rrlsCnt_asd;
 
 
 /* UTILITY -------------------------------------------------------------------*/

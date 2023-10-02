@@ -20,9 +20,13 @@ private:
     DigitalOut *_signal_b;
     uint8_t signal_pat_a[POSI_MAX];//エンコーダAテーブル -> Wheel class
     uint8_t signal_pat_b[POSI_MAX];//エンコーダBテーブル -> Wheel class
+    uint8_t _before_sct, _now_sct;//前回、現在区画格納用
+    int _hys;//ヒステリシス
+    int _hysl;//ヒステリシスL
+    int _hysh;//ヒステリシスH
 public:
     WheelSignal(DigitalOut *a, DigitalOut *b);
-    void calc(int raw_calc);
+    void calc(int raw_calc,bool plus,bool flg);
 
 };
 

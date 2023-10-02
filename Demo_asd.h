@@ -1,14 +1,14 @@
 /**
   ******************************************************************************
-  * @file           : Demo.h
-  * @brief          : Demo mode
+  * @file           : Demo_asd.h
+  * @brief          : Demo_asd mode
   ******************************************************************************
   * @attention
   *
   ******************************************************************************
   */
-#ifndef DEMO_h
-#define DEMO_h
+#ifndef DEMO_ASD_h
+#define DEMO_ASD_h
 
 #include "mbed.h"
 #include "ISensor.h"
@@ -19,7 +19,9 @@
 #include "queueEx.h"
 #include "buffer.h"
 #include "WheelSignal.h"
+#include <cstdint>
 
+#if 0
 typedef enum{
     PAT_A=0,
     PAT_B,
@@ -27,19 +29,23 @@ typedef enum{
     PAT_D,
     PAT_MAX,
 } PATTERN;
+#endif
 
-
-class Demo{
+class Demo_asd{
 private:
     QueueEx _que;//RAW格納キュー
     
     bool _plus;
     uint8_t _sct, _now_sct;
+    bool fast_flg;//高速回転フラグ
     int _step;
     float _w, _h;//周期と電圧
     int _tickCnt;//タイマカウンタ
     uint16_t _raw;//current raw(AD)
     uint16_t _raw2;//convert raw
+    uint16_t before_raw;//前回値
+    int16_t diff_raw;//生値と前回値の差分
+    bool _plus2;//ホイール回転方向格納
     Ticker _tick;//タイマ
     
     int16_t _pwm[POSI_MAX][PAT_MAX];//PWMテーブル
@@ -53,7 +59,11 @@ private:
     WheelSignal *_wheel;
     PATTERN _pattern;//パターンデータ
 public:
-    Demo(Motor *motor, ISensor *sensor, Plotter *plot, WheelSignal *wheel);
+#ifdef PLOT_ASD
+    Demo_asd(Motor *motor, ISensor *sensor, Plotter *plot, WheelSignal *wheel);
+#else
+    Demo_asd(Motor *motor, ISensor *sensor, WheelSignal *wheel);
+#endif
 //    DigitalOut *_signal_a;
 //    DigitalOut *_signal_b;
 private:
