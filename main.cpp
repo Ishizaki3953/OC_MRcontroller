@@ -202,6 +202,15 @@ static void loop(){
 
                 g_demo_asw.start();
                 step_asw++;
+
+                //23.10.24 ibuki add ASDの同時起動
+                g_lclkCnt_asd = 0;
+                g_rclkCnt_asd = 0;
+                g_lrlsCnt_asd = 0;
+                g_rrlsCnt_asd = 0;
+
+                g_demo_asd.start();
+                step_asd++;
             }
         }
         break;
@@ -223,6 +232,15 @@ static void loop(){
         //ハードスイッチ押されたら設定モードを終える
         if(g_lclkCnt_asd || g_rclkCnt_asd){//click
             if(g_term.IsIdle()){//シリアル通信アイドルであれば
+                //23.10.24 ibuki add ASDの同時起動
+                g_lclkCnt_asw = 0;
+                g_rclkCnt_asw = 0;
+                g_lrlsCnt_asw = 0;
+                g_rrlsCnt_asw = 0;
+
+                g_demo_asw.start();
+                step_asw++;
+
                 //23.07.26 ishizaki add ASDの追加
                 g_lclkCnt_asd = 0;
                 g_rclkCnt_asd = 0;

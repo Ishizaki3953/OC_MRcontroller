@@ -5,3 +5,7 @@ compile_commands?json
 ?cache
 mbed
 storage_on_flash
+.mbed
+compile_commands.json
+.clangd
+.cache
